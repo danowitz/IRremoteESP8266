@@ -41,6 +41,7 @@
 #include "ir_Technibel.h"
 #include "ir_Teco.h"
 #include "ir_Toshiba.h"
+#include "ir_Transcold.h"
 #include "ir_Trotec.h"
 #include "ir_Vestel.h"
 #include "ir_Voltas.h"
@@ -58,7 +59,7 @@ IRac::IRac(const uint16_t pin, const bool inverted, const bool use_modulation) {
   this->markAsSent();
 }
 
-/// Initialse the given state with the supplied settings.
+/// Initialise the given state with the supplied settings.
 /// @param[out] state A Ptr to where the settings will be stored.
 /// @param[in] vendor The vendor/protocol type.
 /// @param[in] model The A/C model if applicable.
@@ -111,7 +112,7 @@ void IRac::initState(stdAc::state_t *state,
   state->clock = clock;
 }
 
-/// Initialse the given state with the supplied settings.
+/// Initialise the given state with the supplied settings.
 /// @param[out] state A Ptr to where the settings will be stored.
 /// @note Sets all the parameters to reasonable base/automatic defaults.
 void IRac::initState(stdAc::state_t *state) {
@@ -260,6 +261,9 @@ bool IRac::isProtocolSupported(const decode_type_t protocol) {
 #endif
 #if SEND_TOSHIBA_AC
     case decode_type_t::TOSHIBA_AC:
+#endif
+#if SEND_TRANSCOLD
+    case decode_type_t::TRANSCOLD:
 #endif
 #if SEND_TROTEC
     case decode_type_t::TROTEC:
@@ -1689,7 +1693,7 @@ void IRac::sharp(IRSharpAc *ac,
   ac->setTemp(degrees);
   ac->setFan(ac->convertFan(fan));
   ac->setSwingToggle(swingv != stdAc::swingv_t::kOff);
-  // Econo  deliberately not used as it cycles through 3 modes uncontrolably.
+  // Econo  deliberately not used as it cycles through 3 modes uncontrollably.
   // ac->setEconoToggle(econo);
   ac->setIon(filter);
   // No Horizontal swing setting available.
@@ -2013,6 +2017,48 @@ void IRac::whirlpool(IRWhirlpoolAc *ac, const whirlpool_ac_remote_model_t model,
 }
 #endif  // SEND_WHIRLPOOL_AC
 
+#if SEND_TRANSCOLD
+/// Send a Transcold A/C message with the supplied settings.
+/// @note May result in multiple messages being sent.
+/// @param[in, out] ac A Ptr to an IRTranscoldAc object to use.
+/// @param[in] on The power setting.
+/// @param[in] mode The operation mode setting.
+/// @param[in] degrees The temperature setting in degrees.
+/// @param[in] fan The speed setting for the fan.
+/// @param[in] swingv The vertical swing setting.
+/// @param[in] swingh The horizontal swing setting.
+/// @note -1 is Off, >= 0 is on.
+void IRac::transcold(IRTranscoldAc *ac,
+                     const bool on, const stdAc::opmode_t mode,
+                     const float degrees, const stdAc::fanspeed_t fan,
+                     const stdAc::swingv_t swingv,
+                     const stdAc::swingh_t swingh)  {
+  ac->begin();
+  ac->setPower(on);
+  if (!on) {
+      // after turn off AC no more commands should
+      // be accepted
+      ac->send();
+      return;
+  }
+  ac->setMode(ac->convertMode(mode));
+  ac->setTemp(degrees);
+  ac->setFan(ac->convertFan(fan));
+  // No Filter setting available.
+  // No Beep setting available.
+  // No Clock setting available.
+  // No Econo setting available.
+  // No Quiet setting available.
+  if (swingv != stdAc::swingv_t::kOff || swingh != stdAc::swingh_t::kOff) {
+    // Swing has a special command that needs to be sent independently.
+    ac->setSwing();
+    ac->send();
+  }
+
+  ac->send();
+}
+#endif  // SEND_TRANSCOLD
+
 /// Create a new state base on the provided state that has been suitably fixed.
 /// @note This is for use with Home Assistant, which requires mode to be off if
 ///   the power is off.
@@ -2040,6 +2086,7 @@ stdAc::state_t IRac::handleToggles(const stdAc::state_t desired,
     // Check if we have to handle toggle settings for specific A/C protocols.
     switch (desired.protocol) {
       case decode_type_t::COOLIX:
+      case decode_type_t::TRANSCOLD:
         if ((desired.swingv == stdAc::swingv_t::kOff) ^
             (prev->swingv == stdAc::swingv_t::kOff))  // It changed, so toggle.
           result.swingv = stdAc::swingv_t::kAuto;
@@ -2569,6 +2616,15 @@ bool IRac::sendAc(const stdAc::state_t desired, const stdAc::state_t *prev) {
       break;
     }
 #endif  // SEND_WHIRLPOOL_AC
+#if SEND_TRANSCOLD
+    case TRANSCOLD:
+    {
+      IRTranscoldAc ac(_pin, _inverted, _modulation);
+      transcold(&ac, send.power, send.mode, degC, send.fanspeed, send.swingv,
+                send.swingh);
+      break;
+    }
+#endif  // SEND_TRANSCOLD_AC
     default:
       return false;  // Fail, didn't match anything.
   }
@@ -2610,7 +2666,7 @@ bool IRac::hasStateChanged(void) { return cmpStates(next, _prev); }
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::opmode_t IRac::strToOpmode(const char *str,
                                   const stdAc::opmode_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2640,7 +2696,7 @@ stdAc::opmode_t IRac::strToOpmode(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::fanspeed_t IRac::strToFanspeed(const char *str,
                                       const stdAc::fanspeed_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2671,7 +2727,7 @@ stdAc::fanspeed_t IRac::strToFanspeed(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::swingv_t IRac::strToSwingV(const char *str,
                                   const stdAc::swingv_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2712,7 +2768,7 @@ stdAc::swingv_t IRac::strToSwingV(const char *str,
 /// Convert the supplied str into the appropriate enum.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 stdAc::swingh_t IRac::strToSwingH(const char *str,
                                   const stdAc::swingh_t def) {
   if (!strcasecmp(str, kAutoStr) ||
@@ -2752,7 +2808,7 @@ stdAc::swingh_t IRac::strToSwingH(const char *str,
 /// @note Assumes str is the model code or an integer >= 1.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The enum to return if no conversion was possible.
-/// @return The equivilent enum.
+/// @return The equivalent enum.
 int16_t IRac::strToModel(const char *str, const int16_t def) {
   // Gree
   if (!strcasecmp(str, "YAW1F")) {
@@ -2815,7 +2871,7 @@ int16_t IRac::strToModel(const char *str, const int16_t def) {
 /// Convert the supplied str into the appropriate boolean value.
 /// @param[in] str A Ptr to a C-style string to be converted.
 /// @param[in] def The boolean value to return if no conversion was possible.
-/// @return The equivilent boolean value.
+/// @return The equivalent boolean value.
 bool IRac::strToBool(const char *str, const bool def) {
   if (!strcasecmp(str, kOnStr) ||
       !strcasecmp(str, "1") ||
@@ -2833,14 +2889,14 @@ bool IRac::strToBool(const char *str, const bool def) {
 
 /// Convert the supplied boolean into the appropriate String.
 /// @param[in] value The boolean value to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::boolToString(const bool value) {
   return value ? kOnStr : kOffStr;
 }
 
 /// Convert the supplied operation mode into the appropriate String.
 /// @param[in] mode The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::opmodeToString(const stdAc::opmode_t mode) {
   switch (mode) {
     case stdAc::opmode_t::kOff:
@@ -2862,7 +2918,7 @@ String IRac::opmodeToString(const stdAc::opmode_t mode) {
 
 /// Convert the supplied fan speed enum into the appropriate String.
 /// @param[in] speed The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::fanspeedToString(const stdAc::fanspeed_t speed) {
   switch (speed) {
     case stdAc::fanspeed_t::kAuto:
@@ -2884,7 +2940,7 @@ String IRac::fanspeedToString(const stdAc::fanspeed_t speed) {
 
 /// Convert the supplied enum into the appropriate String.
 /// @param[in] swingv The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::swingvToString(const stdAc::swingv_t swingv) {
   switch (swingv) {
     case stdAc::swingv_t::kOff:
@@ -2908,7 +2964,7 @@ String IRac::swingvToString(const stdAc::swingv_t swingv) {
 
 /// Convert the supplied enum into the appropriate String.
 /// @param[in] swingh The enum to be converted.
-/// @return The equivilent String for the locale.
+/// @return The equivalent String for the locale.
 String IRac::swinghToString(const stdAc::swingh_t swingh) {
   switch (swingh) {
     case stdAc::swingh_t::kOff:
@@ -3272,6 +3328,14 @@ namespace IRAcUtils {
         return ac.isValidLgAc() ? ac.toString() : "";
       }
 #endif  // DECODE_LG
+#if DECODE_TRANSCOLD
+      case decode_type_t::TRANSCOLD: {
+        IRTranscoldAc ac(kGpioUnused);
+        ac.on();
+        ac.setRaw(result->value);  // TRANSCOLD uses value instead of state.
+        return ac.toString();
+      }
+#endif  // DECODE_TRANSCOLD
       default:
         return "";
     }
@@ -3297,7 +3361,7 @@ namespace IRAcUtils {
       case decode_type_t::AIRWELL: {
         IRAirwellAc ac(kGpioUnused);
         ac.setRaw(decode->value);  // Uses value instead of state.
-        *result = ac.toCommon();
+        *result = ac.toCommon(prev);
         break;
       }
 #endif  // DECODE_AIRWELL
@@ -3664,10 +3728,18 @@ namespace IRAcUtils {
       case decode_type_t::WHIRLPOOL_AC: {
         IRWhirlpoolAc ac(kGpioUnused);
         ac.setRaw(decode->state);
-        *result = ac.toCommon();
+        *result = ac.toCommon(prev);
         break;
       }
 #endif  // DECODE_WHIRLPOOL_AC
+#if DECODE_TRANSCOLD
+      case decode_type_t::TRANSCOLD: {
+        IRTranscoldAc ac(kGpioUnused);
+        ac.setRaw(decode->value);  // TRANSCOLD Uses value instead of state.
+        *result = ac.toCommon(prev);
+        break;
+      }
+#endif  // DECODE_TRANSCOLD
       default:
         return false;
     }

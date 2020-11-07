@@ -351,6 +351,11 @@ class IRsend {
   void sendWhynter(const uint64_t data, const uint16_t nbits = kWhynterBits,
                    const uint16_t repeat = kNoRepeat);
 #endif
+#if SEND_MIRAGE
+  void sendMirage(const unsigned char data[],
+                  const uint16_t nbytes = kMirageStateLength,
+                  const uint16_t repeat = kMirageMinRepeat);
+#endif  // SEND_MIRAGE
 #if SEND_MITSUBISHI
   void sendMitsubishi(uint64_t data, uint16_t nbits = kMitsubishiBits,
                       uint16_t repeat = kMitsubishiMinRepeat);
@@ -568,7 +573,12 @@ class IRsend {
   void sendPanasonicAC(const unsigned char data[],
                        const uint16_t nbytes = kPanasonicAcStateLength,
                        const uint16_t repeat = kPanasonicAcDefaultRepeat);
-#endif
+#endif  // SEND_PANASONIC_AC
+#if SEND_PANASONIC_AC32
+  void sendPanasonicAC32(const uint64_t data,
+                         const uint16_t nbits = kPanasonicAc32Bits,
+                         const uint16_t repeat = kPanasonicAcDefaultRepeat);
+#endif  // SEND_PANASONIC_AC32
 #if SEND_PIONEER
   void sendPioneer(const uint64_t data, const uint16_t nbits = kPioneerBits,
                    const uint16_t repeat = kNoRepeat);
@@ -659,8 +669,13 @@ class IRsend {
 #endif  // SEND_METZ
 #if SEND_TRANSCOLD
   void sendTranscold(const uint64_t data, const uint16_t nbits = kTranscoldBits,
-                     const uint16_t repeat = kNoRepeat);
+                     const uint16_t repeat = kTranscoldDefaultRepeat);
 #endif  // SEND_TRANSCOLD
+#if SEND_ELITESCREENS
+  void sendElitescreens(const uint64_t data,
+                        const uint16_t nbits = kEliteScreensBits,
+                        const uint16_t repeat = kEliteScreensDefaultRepeat);
+#endif  // SEND_ELITESCREENS
 
  protected:
 #ifdef UNIT_TEST

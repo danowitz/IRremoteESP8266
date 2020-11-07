@@ -538,6 +538,9 @@
 #ifndef D_STR_ELECTRA_AC
 #define D_STR_ELECTRA_AC "ELECTRA_AC"
 #endif  // D_STR_ELECTRA_AC
+#ifndef D_STR_ELITESCREENS
+#define D_STR_ELITESCREENS "ELITESCREENS"
+#endif  // D_STR_ELITESCREENS
 #ifndef D_STR_EPSON
 #define D_STR_EPSON "EPSON"
 #endif  // D_STR_EPSON
@@ -616,6 +619,9 @@
 #ifndef D_STR_MIDEA24
 #define D_STR_MIDEA24 "MIDEA24"
 #endif  // D_STR_MIDEA24
+#ifndef D_STR_MIRAGE
+#define D_STR_MIRAGE "MIRAGE"
+#endif  // D_STR_MIRAGE
 #ifndef D_STR_MITSUBISHI
 #define D_STR_MITSUBISHI "MITSUBISHI"
 #endif  // D_STR_MITSUBISHI
@@ -664,6 +670,9 @@
 #ifndef D_STR_PANASONIC_AC
 #define D_STR_PANASONIC_AC "PANASONIC_AC"
 #endif  // D_STR_PANASONIC_AC
+#ifndef D_STR_PANASONIC_AC32
+#define D_STR_PANASONIC_AC32 D_STR_PANASONIC_AC"32"
+#endif  // D_STR_PANASONIC_AC32
 #ifndef D_STR_PIONEER
 #define D_STR_PIONEER "PIONEER"
 #endif  // D_STR_PIONEER
@@ -768,6 +777,9 @@
 #ifndef D_STR_MESGDESC
 #define D_STR_MESGDESC "Mesg Desc."
 #endif  // D_STR_MESGDESC
+#ifndef D_STR_TOLERANCE
+#define D_STR_TOLERANCE "Tolerance"
+#endif  // D_STR_TOLERANCE
 #ifndef D_STR_IRRECVDUMP_STARTUP
 #define D_STR_IRRECVDUMP_STARTUP \
     "IRrecvDump is now running and waiting for IR input on Pin %d"

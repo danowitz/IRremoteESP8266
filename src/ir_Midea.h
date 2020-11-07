@@ -10,6 +10,7 @@
 //   Brand: Pioneer System,  Model: RUBO18GMFILCAD A/C (18K BTU) (MIDEA)
 //   Brand: Comfee, Model: MPD1-12CRN7 A/C (MIDEA)
 //   Brand: Keystone, Model: RG57H4(B)BGEF remote (MIDEA)
+//   Brand: Kaysun,  Model: RG57A6/BGEFU1 remote (MIDEA)
 //   Brand: Midea,  Model: FS40-7AR Stand Fan (MIDEA24)
 //   Brand: Danby,  Model: DAC080BGUWDB (MIDEA)
 //   Brand: Danby,  Model: DAC100BGUWDB (MIDEA)
@@ -33,6 +34,8 @@
 #if DANBY_DAC
     kSwingVToggleStr = kIonStr;
 #endif
+
+/// Native representation of a Midea A/C message.
 union MideaProtocol{
   uint64_t remote_state;  ///< The state in native IR code form
   // only use 48bits
@@ -57,6 +60,7 @@ union MideaProtocol{
     uint8_t :0;
   };
 };
+
 // Constants
 const uint8_t kMideaACMinTempF = 62;  // Fahrenheit
 const uint8_t kMideaACMaxTempF = 86;  // Fahrenheit

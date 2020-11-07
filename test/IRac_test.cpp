@@ -1467,6 +1467,36 @@ TEST(TestIRac, Toshiba) {
       ac._irsend.outputStr());
 }
 
+TEST(TestIRac, Transcold) {
+  IRTranscoldAc ac(kGpioUnused);
+  IRac irac(kGpioUnused);
+  IRrecv capture(kGpioUnused);
+  char expected[] =
+      "Power: On, Mode: 6 (Cool), Fan: 11 (Max), Temp: 19C";
+
+  ac.begin();
+  irac.transcold(&ac,
+              true,                        // Power
+              stdAc::opmode_t::kCool,      // Mode
+              19,                          // Celsius
+              stdAc::fanspeed_t::kMax,     // Fan speed
+              stdAc::swingv_t::kOff,       // Vertical swing
+              stdAc::swingh_t::kOff);      // Horizontal swing
+  EXPECT_TRUE(ac.getPower());
+  EXPECT_EQ(kTranscoldCool, ac.getMode());
+  EXPECT_EQ(19, ac.getTemp());
+  EXPECT_EQ(kTranscoldFanMax, ac.getFan());
+  EXPECT_FALSE(ac.getSwing());
+  ASSERT_EQ(expected, ac.toString());
+  ac._irsend.makeDecodeResult();
+  EXPECT_TRUE(capture.decode(&ac._irsend.capture));
+  ASSERT_EQ(decode_type_t::TRANSCOLD, ac._irsend.capture.decode_type);
+  ASSERT_EQ(kTranscoldBits, ac._irsend.capture.bits);
+  ASSERT_EQ(expected, IRAcUtils::resultAcToString(&ac._irsend.capture));
+  stdAc::state_t r, p;
+  ASSERT_TRUE(IRAcUtils::decodeToState(&ac._irsend.capture, &r, &p));
+}
+
 TEST(TestIRac, Trotec) {
   IRTrotecESP ac(kGpioUnused);
   IRac irac(kGpioUnused);
@@ -2113,7 +2143,7 @@ TEST(TestIRac, Issue1001) {
   EXPECT_TRUE(capture.decode(&ac._irsend.capture));
   ASSERT_EQ(WHIRLPOOL_AC, ac._irsend.capture.decode_type);
   ASSERT_EQ(kWhirlpoolAcBits, ac._irsend.capture.bits);
-  ASSERT_EQ("Model: 1 (DG11J13A), Power Toggle: On, Mode: 1 (Auto), Temp: 24C, "
+  ASSERT_EQ("Model: 1 (DG11J13A), Power Toggle: On, Mode: 2 (Cool), Temp: 24C, "
             "Fan: 0 (Auto), Swing: Off, Light: Off, Clock: 00:00, "
             "On Timer: Off, Off Timer: Off, Sleep: Off, Super: Off, "
             "Command: 1 (Power)",
